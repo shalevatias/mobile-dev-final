@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">Studygram</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="save">Save</string>
+    <string name="delete">Delete</string>
+    <string name="edit">Edit</string>
+    <string name="loading">Loading…</string>
+    <string name="error">Error</string>
+    <string name="retry">Retry</string>
+    <string name="login">Login</string>
+    <string name="register">Register</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="logout">Logout</string>
+    <string name="nav_feed">Feed</string>
+    <string name="nav_create_post">Create Post</string>
+    <string name="nav_profile">Profile</string>
+    <string name="nav_my_content">My Content</string>
+</resources>
