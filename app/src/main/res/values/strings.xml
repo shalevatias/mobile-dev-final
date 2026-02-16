@@ -17,4 +17,37 @@
     <string name="nav_create_post">Create Post</string>
     <string name="nav_profile">Profile</string>
     <string name="nav_my_content">My Content</string>
+<<<<<<< Updated upstream
+=======
+    <string name="email_hint">Enter your email</string>
+    <string name="password_hint">Enter your password</string>
+    <string name="username_hint">Enter your username</string>
+    <string name="dont_have_account">Don\'t have an account?</string>
+    <string name="already_have_account">Already have an account?</string>
+    <string name="sign_up">Sign Up</string>
+    <string name="sign_in">Sign In</string>
+    <string name="post_title">Title</string>
+    <string name="post_content">Content</string>
+    <string name="course_tag">Course</string>
+    <string name="difficulty">Difficulty</string>
+    <string name="add_image">Add Image</string>
+    <string name="create_post">Create Post</string>
+    <string name="update_post">Update Post</string>
+    <string name="like">Like</string>
+    <string name="comment">Comment</string>
+    <string name="comments">Comments</string>
+    <string name="no_posts">No posts yet</string>
+    <string name="no_comments">No comments yet</string>
+    <string name="add_comment">Add a comment…</string>
+    <string name="post_comment">Post</string>
+    <string name="edit_profile">Edit Profile</string>
+    <string name="change_picture">Change Picture</string>
+    <string name="my_posts">My Posts</string>
+    <string name="filter_by_course">Filter by course</string>
+    <string name="all_courses">All Courses</string>
+    <string name="refresh">Refresh</string>
+    <string name="quote_icon">Quote Icon</string>
+    <string name="new_quote">New Quote</string>
+    <string name="inspiration_of_the_day">Inspiration of the Day</string>
+>>>>>>> Stashed changes
 </resources>
