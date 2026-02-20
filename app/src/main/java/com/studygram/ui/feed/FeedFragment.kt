@@ -3,7 +3,7 @@ package com.studygram.ui.feed
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.ViewGroup
-import androidx.fragment.app.viewModels
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.chip.Chip
 import com.studygram.R
@@ -21,23 +21,30 @@ import com.studygram.utils.visible
 
 class FeedFragment : BaseFragment<FragmentFeedBinding>() {
 
-    private val viewModel: FeedViewModel by viewModels {
-        val database = AppDatabase.getDatabase(requireContext())
+    private val viewModel: FeedViewModel by lazy {
+        android.util.Log.d("FeedFragment", "Creating FeedViewModel...")
+        val context = requireContext()
+        val database = AppDatabase.getDatabase(context)
         val firestoreManager = FirestoreManager()
-        val preferenceManager = PreferenceManager(requireContext())
+        val preferenceManager = PreferenceManager(context)
         val authManager = FirebaseAuthManager()
         val postRepository = PostRepository(
+            context,
             database.postDao(),
             firestoreManager,
             preferenceManager
         )
         val authRepository = AuthRepository(
+            context,
             authManager,
             firestoreManager,
             database.userDao(),
             preferenceManager
         )
-        FeedViewModelFactory(postRepository, authRepository)
+        val factory = FeedViewModelFactory(postRepository, authRepository)
+        val vm = ViewModelProvider(this, factory)[FeedViewModel::class.java]
+        android.util.Log.d("FeedFragment", "FeedViewModel created")
+        vm
     }
 
     private lateinit var postAdapter: PostAdapter
@@ -46,16 +53,19 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>() {
         FragmentFeedBinding.inflate(inflater, container, false)
 
     override fun setupUI() {
+        android.util.Log.d("FeedFragment", "setupUI called")
         postAdapter = PostAdapter(
             onPostClick = { post ->
-                val action = FeedFragmentDirections
-                    .actionFeedFragmentToPostDetailFragment(post.id)
-                findNavController().navigate(action)
+                // TODO: Navigate to post detail when implemented
+                showToast("Post: ${post.title}")
             },
             onLikeClick = { post ->
                 viewModel.likePost(post.id)
             },
-            currentUserId = viewModel.currentUserId
+            onCommentClick = { post ->
+                // TODO: Navigate to comments when implemented
+                showToast("Comments: ${post.commentsCount}")
+            }
         )
 
         binding.recyclerViewPosts.adapter = postAdapter
@@ -78,12 +88,19 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>() {
     }
 
     override fun observeData() {
+        android.util.Log.d("FeedFragment", "observeData called")
         viewModel.posts.observe(viewLifecycleOwner) { posts ->
+            android.util.Log.d("FeedFragment", "Posts received: ${posts.size} posts")
+            posts.forEach { post ->
+                android.util.Log.d("FeedFragment", "Post: ${post.title} - ${post.id}")
+            }
             postAdapter.submitList(posts)
             if (posts.isEmpty()) {
+                android.util.Log.d("FeedFragment", "No posts - showing empty state")
                 binding.tvEmptyState.visible()
                 binding.recyclerViewPosts.gone()
             } else {
+                android.util.Log.d("FeedFragment", "Showing ${posts.size} posts")
                 binding.tvEmptyState.gone()
                 binding.recyclerViewPosts.visible()
             }
@@ -100,10 +117,19 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>() {
                 }
                 is Resource.Success -> {
                     binding.swipeRefresh.isRefreshing = false
+                    // Optional: Show success message
+                    // showSuccess("Posts refreshed")
                 }
                 is Resource.Error -> {
                     binding.swipeRefresh.isRefreshing = false
-                    showToast(resource.message ?: "Sync failed")
+                    // Use enhanced error display with retry option
+                    showSnackbarWithAction(
+                        message = resource.message ?: "Sync failed",
+                        actionText = getString(R.string.retry),
+                        action = {
+                            viewModel.refreshPosts()
+                        }
+                    )
                 }
             }
         }
@@ -135,6 +161,34 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>() {
                 }
             }
         }
+
+        // Observe like state
+        viewModel.likeState.observe(viewLifecycleOwner) { resource ->
+            when (resource) {
+                is Resource.Loading -> {
+                    // Optional: Show loading indicator for like action
+                }
+                is Resource.Success -> {
+                    // Like succeeded - UI already updated via LiveData
+                }
+                is Resource.Error -> {
+                    showError(resource.message ?: "Failed to like post")
+                }
+            }
+        }
+
+        // Observe general errors
+        viewModel.error.observe(viewLifecycleOwner) { errorMessage ->
+            errorMessage?.let {
+                showError(it)
+                viewModel.clearError()
+            }
+        }
+    }
+
+    override fun onRetryAfterError(exception: Throwable) {
+        // Retry the last operation based on context
+        viewModel.syncPosts()
     }
 
     private fun setupCourseFilter(courses: List<String>) {
@@ -164,17 +218,16 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>() {
 
     private fun handleMenuClick(menuItem: MenuItem): Boolean {
         return when (menuItem.itemId) {
-            R.id.action_profile -> {
-                findNavController().navigate(R.id.action_feedFragment_to_profileFragment)
-                true
-            }
-            R.id.action_my_content -> {
-                findNavController().navigate(R.id.action_feedFragment_to_myContentFragment)
-                true
-            }
             R.id.action_logout -> {
-                viewModel.logout()
-                findNavController().navigate(R.id.action_feedFragment_to_loginFragment)
+                showConfirmationDialog(
+                    title = getString(R.string.logout),
+                    message = getString(R.string.confirm_logout),
+                    positiveButtonText = getString(R.string.logout),
+                    onConfirm = {
+                        viewModel.logout()
+                        findNavController().navigate(R.id.loginFragment)
+                    }
+                )
                 true
             }
             else -> false

@@ -14,8 +14,10 @@ class FirestoreManager {
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 
     init {
+        // Disable Firestore offline persistence to avoid "client is offline" errors
+        // We handle offline mode with Room database instead
         firestore.firestoreSettings = com.google.firebase.firestore.FirebaseFirestoreSettings.Builder()
-            .setPersistenceEnabled(true)
+            .setPersistenceEnabled(false)
             .build()
     }
 
@@ -59,6 +61,10 @@ class FirestoreManager {
         }
     }
 
+    fun generatePostId(): String {
+        return firestore.collection(Constants.POSTS_COLLECTION).document().id
+    }
+
     suspend fun savePost(post: Post): Result<Unit> {
         return try {
             firestore.collection(Constants.POSTS_COLLECTION)
@@ -86,15 +92,43 @@ class FirestoreManager {
 
     suspend fun getAllPosts(): Result<List<Post>> {
         return try {
-            val snapshot = firestore.collection(Constants.POSTS_COLLECTION)
-                .orderBy(Constants.FIELD_TIMESTAMP, Query.Direction.DESCENDING)
-                .get()
-                .await()
-            val posts = snapshot.documents.mapNotNull { doc ->
-                doc.data?.let { Post.fromFirestore(it) }
+            android.util.Log.d("FirestoreManager", "Fetching all posts from Firestore...")
+
+            // Try with orderBy first
+            var snapshot = try {
+                firestore.collection(Constants.POSTS_COLLECTION)
+                    .orderBy(Constants.FIELD_TIMESTAMP, Query.Direction.DESCENDING)
+                    .get()
+                    .await()
+            } catch (e: Exception) {
+                // If orderBy fails (missing index), fetch without ordering
+                android.util.Log.w("FirestoreManager", "OrderBy failed, fetching without ordering: ${e.message}")
+                firestore.collection(Constants.POSTS_COLLECTION)
+                    .get()
+                    .await()
             }
-            Result.success(posts)
+
+            android.util.Log.d("FirestoreManager", "Received ${snapshot.documents.size} documents from Firestore")
+
+            val posts = snapshot.documents.mapNotNull { doc ->
+                try {
+                    doc.data?.let {
+                        android.util.Log.d("FirestoreManager", "Parsing post: ${doc.id}, data keys: ${it.keys}")
+                        Post.fromFirestore(it)
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("FirestoreManager", "Error parsing post ${doc.id}", e)
+                    null
+                }
+            }
+
+            // Sort locally by timestamp if we got posts
+            val sortedPosts = posts.sortedByDescending { it.timestamp }
+
+            android.util.Log.d("FirestoreManager", "Successfully parsed ${sortedPosts.size} posts")
+            Result.success(sortedPosts)
         } catch (e: Exception) {
+            android.util.Log.e("FirestoreManager", "Error fetching posts", e)
             Result.failure(e)
         }
     }

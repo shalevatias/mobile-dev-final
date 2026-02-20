@@ -5,6 +5,8 @@ import com.studygram.data.remote.RetrofitClient
 import com.studygram.utils.Resource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.net.UnknownHostException
+import java.io.IOException
 
 /**
  * Repository for fetching inspirational quotes from external API
@@ -38,8 +40,12 @@ class QuoteRepository {
                     Resource.Error("Failed to fetch quote: ${response.message()}")
                 }
             }
+        } catch (e: UnknownHostException) {
+            Resource.Error("No internet connection. Cannot load quote.")
+        } catch (e: IOException) {
+            Resource.Error("Network error. Please check your connection.")
         } catch (e: Exception) {
-            Resource.Error("Network error: ${e.localizedMessage ?: "Unknown error"}")
+            Resource.Error("Error: ${e.localizedMessage ?: "Unknown error"}")
         }
     }
 }

@@ -1,12 +1,17 @@
 package com.studygram.data.repository
 
+import android.content.Context
 import com.studygram.data.local.UserDao
 import com.studygram.data.model.User
 import com.studygram.data.remote.FirebaseAuthManager
 import com.studygram.data.remote.FirestoreManager
+import com.studygram.utils.NetworkManager
 import com.studygram.utils.PreferenceManager
+import java.net.UnknownHostException
+import java.io.IOException
 
 class AuthRepository(
+    private val context: Context,
     private val authManager: FirebaseAuthManager,
     private val firestoreManager: FirestoreManager,
     private val userDao: UserDao,
@@ -19,11 +24,31 @@ class AuthRepository(
     val isUserLoggedIn: Boolean
         get() = authManager.isUserLoggedIn
 
+    private fun isNetworkAvailable(): Boolean {
+        return NetworkManager.isNetworkAvailable(context)
+    }
+
+    private fun getNetworkError(e: Throwable): Exception {
+        return when (e) {
+            is UnknownHostException, is IOException ->
+                Exception("No internet connection. Authentication requires internet.")
+            is Exception -> e
+            else -> Exception(e.message ?: "An error occurred", e)
+        }
+    }
+
     suspend fun signUp(email: String, password: String, username: String): Result<User> {
         return try {
+            // Check network availability
+            if (!isNetworkAvailable()) {
+                return Result.failure(Exception("Cannot sign up while offline. Please check your internet connection."))
+            }
+
             val authResult = authManager.signUp(email, password, username)
             if (authResult.isFailure) {
-                return Result.failure(authResult.exceptionOrNull() ?: Exception("Sign up failed"))
+                return Result.failure(
+                    getNetworkError(authResult.exceptionOrNull() ?: Exception("Sign up failed"))
+                )
             }
 
             val firebaseUser = authResult.getOrNull()!!
@@ -36,7 +61,9 @@ class AuthRepository(
 
             val firestoreResult = firestoreManager.saveUser(user)
             if (firestoreResult.isFailure) {
-                return Result.failure(firestoreResult.exceptionOrNull() ?: Exception("Failed to save user"))
+                return Result.failure(
+                    getNetworkError(firestoreResult.exceptionOrNull() ?: Exception("Failed to save user"))
+                )
             }
 
             userDao.insert(user)
@@ -44,32 +71,57 @@ class AuthRepository(
 
             Result.success(user)
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(getNetworkError(e))
         }
     }
 
     suspend fun signIn(email: String, password: String): Result<User> {
         return try {
+            // Check network availability for authentication
+            if (!isNetworkAvailable()) {
+                return Result.failure(Exception("Cannot sign in while offline. Please check your internet connection."))
+            }
+
             val authResult = authManager.signIn(email, password)
             if (authResult.isFailure) {
-                return Result.failure(authResult.exceptionOrNull() ?: Exception("Sign in failed"))
+                return Result.failure(
+                    getNetworkError(authResult.exceptionOrNull() ?: Exception("Sign in failed"))
+                )
             }
 
             val firebaseUser = authResult.getOrNull()!!
             val userId = firebaseUser.uid
 
+            // Try to get user from Firestore
             val firestoreResult = firestoreManager.getUser(userId)
-            if (firestoreResult.isFailure) {
-                return Result.failure(firestoreResult.exceptionOrNull() ?: Exception("Failed to get user"))
+            val user = if (firestoreResult.isSuccess) {
+                // Successfully got user from Firestore
+                val firestoreUser = firestoreResult.getOrNull()!!
+                userDao.insert(firestoreUser)
+                firestoreUser
+            } else {
+                // Firestore failed (offline mode), try to get cached user
+                val cachedUser = userDao.getUserById(userId)
+                if (cachedUser != null) {
+                    // Use cached user data
+                    cachedUser
+                } else {
+                    // No cached data and Firestore failed - create minimal user
+                    val minimalUser = User(
+                        id = userId,
+                        email = email,
+                        username = email.substringBefore("@"),
+                        profileImageUrl = null
+                    )
+                    userDao.insert(minimalUser)
+                    minimalUser
+                }
             }
 
-            val user = firestoreResult.getOrNull()!!
-            userDao.insert(user)
             preferenceManager.userId = user.id
-
             Result.success(user)
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(getNetworkError(e))
         }
     }
 
@@ -86,11 +138,7 @@ class AuthRepository(
 
     suspend fun updateUserProfile(userId: String, updates: Map<String, Any>): Result<Unit> {
         return try {
-            val firestoreResult = firestoreManager.updateUser(userId, updates)
-            if (firestoreResult.isFailure) {
-                return Result.failure(firestoreResult.exceptionOrNull() ?: Exception("Update failed"))
-            }
-
+            // Update local database first
             val user = userDao.getUserById(userId)
             if (user != null) {
                 val updatedUser = user.copy(
@@ -101,9 +149,19 @@ class AuthRepository(
                 userDao.update(updatedUser)
             }
 
+            // Sync with Firestore if online
+            if (isNetworkAvailable()) {
+                val firestoreResult = firestoreManager.updateUser(userId, updates)
+                if (firestoreResult.isFailure) {
+                    return Result.failure(
+                        getNetworkError(firestoreResult.exceptionOrNull() ?: Exception("Update failed"))
+                    )
+                }
+            }
+
             Result.success(Unit)
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(getNetworkError(e))
         }
     }
 }
