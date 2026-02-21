@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.studygram.data.model.User
 import com.studygram.data.repository.AuthRepository
+import com.studygram.utils.ErrorHandler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,9 +32,13 @@ class AuthViewModel(
             if (result.isSuccess) {
                 _authState.value = AuthState(user = result.getOrNull())
             } else {
-                _authState.value = AuthState(
-                    error = result.exceptionOrNull()?.message ?: "Login failed"
-                )
+                val exception = result.exceptionOrNull()
+                val errorMessage = if (exception != null) {
+                    ErrorHandler.getErrorMessage(exception)
+                } else {
+                    "Login failed. Please try again."
+                }
+                _authState.value = AuthState(error = errorMessage)
             }
         }
     }
@@ -47,10 +52,21 @@ class AuthViewModel(
             if (result.isSuccess) {
                 _authState.value = AuthState(user = result.getOrNull())
             } else {
-                _authState.value = AuthState(
-                    error = result.exceptionOrNull()?.message ?: "Registration failed"
-                )
+                val exception = result.exceptionOrNull()
+                val errorMessage = if (exception != null) {
+                    ErrorHandler.getErrorMessage(exception)
+                } else {
+                    "Registration failed. Please try again."
+                }
+                _authState.value = AuthState(error = errorMessage)
             }
         }
+    }
+
+    /**
+     * Clear the error state
+     */
+    fun clearError() {
+        _authState.value = _authState.value.copy(error = null)
     }
 }

@@ -90,4 +90,49 @@
     <string name="confirm_delete_post">Are you sure you want to delete this post?</string>
     <string name="confirm_delete_comment">Are you sure you want to delete this comment?</string>
     <string name="confirm_logout">Are you sure you want to logout?</string>
+
+    <!-- Empty State Messages -->
+    <string name="empty_state_feed_title">No posts yet</string>
+    <string name="empty_state_feed_message">Be the first to share something!\nTap the + button to create a post.</string>
+    <string name="empty_state_my_content_title">You haven\'t posted anything yet</string>
+    <string name="empty_state_my_content_message">Share your knowledge with other students!\nCreate your first post to get started.</string>
+    <string name="empty_state_comments_title">No comments yet</string>
+    <string name="empty_state_comments_message">Be the first to comment!</string>
+    <string name="empty_state_search_title">No results found</string>
+    <string name="empty_state_search_message">Try adjusting your search or filters</string>
+    <string name="empty_state_filtered_title">No posts match this filter</string>
+    <string name="empty_state_filtered_message">Try selecting a different course</string>
+
+    <!-- Loading Messages -->
+    <string name="loading_posts">Loading posts…</string>
+    <string name="loading_comments">Loading comments…</string>
+    <string name="loading_profile">Loading profile…</string>
+    <string name="uploading_image">Uploading image…</string>
+    <string name="creating_post">Creating post…</string>
+    <string name="updating_post">Updating post…</string>
+    <string name="signing_in">Signing in…</string>
+    <string name="signing_up">Creating account…</string>
+
+    <!-- Action Messages -->
+    <string name="action_create_first_post">Create your first post</string>
+    <string name="action_try_again">Try again</string>
+    <string name="action_go_back">Go back</string>
+    <string name="action_refresh">Refresh</string>
+
+    <!-- Additional Validation Messages -->
+    <string name="validation_title_too_short">Title must be at least 3 characters</string>
+    <string name="validation_title_too_long">Title must be less than 100 characters</string>
+    <string name="validation_content_too_short">Content must be at least 10 characters</string>
+    <string name="validation_course_too_short">Course name must be at least 2 characters</string>
+    <string name="validation_comment_too_short">Comment must be at least 1 character</string>
+    <string name="validation_username_too_short">Username must be at least 3 characters</string>
+    <string name="validation_email_invalid">Please enter a valid email address</string>
+    <string name="validation_password_too_weak">Password must be at least 6 characters</string>
+
+    <!-- Network Status Messages -->
+    <string name="status_syncing">Syncing…</string>
+    <string name="status_sync_complete">Sync complete</string>
+    <string name="status_sync_failed">Sync failed</string>
+    <string name="status_offline">Offline</string>
+    <string name="status_online">Online</string>
 </resources>

@@ -11,6 +11,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.studygram.R
 import com.studygram.databinding.FragmentLoginBinding
+import com.studygram.utils.FormValidator
+import com.studygram.utils.ValidationUtils
+import com.studygram.utils.hideKeyboard
 import kotlinx.coroutines.launch
 
 class LoginFragment : Fragment() {
@@ -21,6 +24,8 @@ class LoginFragment : Fragment() {
     private val viewModel: AuthViewModel by viewModels {
         AuthViewModelFactory(requireContext())
     }
+
+    private val formValidator = FormValidator()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -35,15 +40,19 @@ class LoginFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         setupClickListeners()
+        setupRealTimeValidation()
         observeAuthState()
     }
 
     private fun setupClickListeners() {
         binding.btnLogin.setOnClickListener {
-            val email = binding.etEmail.text.toString().trim()
-            val password = binding.etPassword.text.toString().trim()
+            // Clear previous errors
+            formValidator.clearErrors(binding.tilEmail, binding.tilPassword)
+            hideKeyboard()
 
-            if (validateInput(email, password)) {
+            if (validateInput()) {
+                val email = binding.etEmail.text.toString().trim()
+                val password = binding.etPassword.text.toString().trim()
                 viewModel.signIn(email, password)
             }
         }
@@ -53,24 +62,32 @@ class LoginFragment : Fragment() {
         }
     }
 
-    private fun validateInput(email: String, password: String): Boolean {
-        if (email.isEmpty()) {
-            binding.tilEmail.error = getString(R.string.validation_email_required)
-            return false
+    /**
+     * Setup real-time validation to clear errors as user types
+     */
+    private fun setupRealTimeValidation() {
+        binding.etEmail.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus && binding.etEmail.text.toString().isNotEmpty()) {
+                formValidator.validateEmail(binding.tilEmail)
+            }
         }
-        binding.tilEmail.error = null
 
-        if (password.isEmpty()) {
-            binding.tilPassword.error = getString(R.string.validation_password_required)
-            return false
+        binding.etPassword.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus && binding.etPassword.text.toString().isNotEmpty()) {
+                formValidator.validatePassword(binding.tilPassword)
+            }
         }
-        if (password.length < 6) {
-            binding.tilPassword.error = getString(R.string.error_invalid_password)
-            return false
-        }
-        binding.tilPassword.error = null
+    }
 
-        return true
+    /**
+     * Validate all input fields using FormValidator
+     * @return True if all fields are valid, false otherwise
+     */
+    private fun validateInput(): Boolean {
+        val isEmailValid = formValidator.validateEmail(binding.tilEmail)
+        val isPasswordValid = formValidator.validatePassword(binding.tilPassword)
+
+        return isEmailValid && isPasswordValid
     }
 
     private fun observeAuthState() {
@@ -81,21 +98,33 @@ class LoginFragment : Fragment() {
                         binding.progressBar.visibility = View.VISIBLE
                         binding.btnLogin.isEnabled = false
                         binding.tvError.visibility = View.GONE
+                        // Disable input fields during loading
+                        binding.tilEmail.isEnabled = false
+                        binding.tilPassword.isEnabled = false
                     }
                     state.error != null -> {
                         binding.progressBar.visibility = View.GONE
                         binding.btnLogin.isEnabled = true
                         binding.tvError.visibility = View.VISIBLE
                         binding.tvError.text = state.error
+                        // Re-enable input fields
+                        binding.tilEmail.isEnabled = true
+                        binding.tilPassword.isEnabled = true
+
+                        // Clear error after showing it
+                        viewModel.clearError()
                     }
                     state.user != null -> {
                         binding.progressBar.visibility = View.GONE
-                        Toast.makeText(requireContext(), "Login successful!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "Welcome back!", Toast.LENGTH_SHORT).show()
                         findNavController().navigate(R.id.action_loginFragment_to_feedFragment)
                     }
                     else -> {
                         binding.progressBar.visibility = View.GONE
                         binding.btnLogin.isEnabled = true
+                        // Re-enable input fields
+                        binding.tilEmail.isEnabled = true
+                        binding.tilPassword.isEnabled = true
                     }
                 }
             }
