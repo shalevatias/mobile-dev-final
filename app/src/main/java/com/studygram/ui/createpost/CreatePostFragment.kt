@@ -16,13 +16,16 @@ import com.studygram.data.remote.FirestoreManager
 import com.studygram.data.repository.PostRepository
 import com.studygram.databinding.FragmentCreatePostBinding
 import com.studygram.ui.base.BaseFragment
+import com.studygram.utils.FormValidator
 import com.studygram.utils.PreferenceManager
 import com.studygram.utils.Resource
+import com.studygram.utils.hideKeyboard
 import kotlinx.coroutines.launch
 
 class CreatePostFragment : BaseFragment<FragmentCreatePostBinding>() {
 
     private var selectedImageUri: Uri? = null
+    private val formValidator = FormValidator()
 
     private val imagePickerLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
@@ -54,11 +57,37 @@ class CreatePostFragment : BaseFragment<FragmentCreatePostBinding>() {
 
     override fun setupUI() {
         binding.btnCreatePost.setOnClickListener {
+            hideKeyboard()
             createPost()
         }
 
         binding.btnAddImage.setOnClickListener {
             imagePickerLauncher.launch("image/*")
+        }
+
+        setupRealTimeValidation()
+    }
+
+    /**
+     * Setup real-time validation to clear errors as user types
+     */
+    private fun setupRealTimeValidation() {
+        binding.etTitle.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus && binding.etTitle.text.toString().isNotEmpty()) {
+                formValidator.validatePostTitle(binding.tilTitle)
+            }
+        }
+
+        binding.etContent.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus && binding.etContent.text.toString().isNotEmpty()) {
+                formValidator.validatePostContent(binding.tilContent)
+            }
+        }
+
+        binding.etCourse.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus && binding.etCourse.text.toString().isNotEmpty()) {
+                formValidator.validateCourseTag(binding.tilCourse)
+            }
         }
     }
 
@@ -70,6 +99,11 @@ class CreatePostFragment : BaseFragment<FragmentCreatePostBinding>() {
                         binding.progressBar.visibility = View.VISIBLE
                         binding.btnCreatePost.isEnabled = false
                         binding.btnAddImage.isEnabled = false
+                        // Disable input fields during loading
+                        binding.tilTitle.isEnabled = false
+                        binding.tilContent.isEnabled = false
+                        binding.tilCourse.isEnabled = false
+                        binding.rgDifficulty.isEnabled = false
                     }
                     is Resource.Success -> {
                         binding.progressBar.visibility = View.GONE
@@ -80,41 +114,51 @@ class CreatePostFragment : BaseFragment<FragmentCreatePostBinding>() {
                         binding.progressBar.visibility = View.GONE
                         binding.btnCreatePost.isEnabled = true
                         binding.btnAddImage.isEnabled = true
+                        // Re-enable input fields
+                        binding.tilTitle.isEnabled = true
+                        binding.tilContent.isEnabled = true
+                        binding.tilCourse.isEnabled = true
+                        binding.rgDifficulty.isEnabled = true
                         showError(resource.message ?: "Failed to create post")
                     }
                     null -> {
                         binding.progressBar.visibility = View.GONE
                         binding.btnCreatePost.isEnabled = true
                         binding.btnAddImage.isEnabled = true
+                        // Re-enable input fields
+                        binding.tilTitle.isEnabled = true
+                        binding.tilContent.isEnabled = true
+                        binding.tilCourse.isEnabled = true
+                        binding.rgDifficulty.isEnabled = true
                     }
                 }
             }
         }
     }
 
+    /**
+     * Validate and create post
+     */
     private fun createPost() {
+        // Clear previous errors
+        formValidator.clearErrors(binding.tilTitle, binding.tilContent, binding.tilCourse)
+
+        // Validate all fields
+        val isTitleValid = formValidator.validatePostTitle(binding.tilTitle)
+        val isContentValid = formValidator.validatePostContent(binding.tilContent)
+        val isCourseValid = formValidator.validateCourseTag(binding.tilCourse)
+
+        if (!isTitleValid || !isContentValid || !isCourseValid) {
+            // Show the first error to user
+            formValidator.getFirstError()?.let { errorMsg ->
+                showError(errorMsg)
+            }
+            return
+        }
+
         val title = binding.etTitle.text.toString().trim()
         val content = binding.etContent.text.toString().trim()
         val course = binding.etCourse.text.toString().trim()
-
-        // Validate
-        if (title.isEmpty()) {
-            binding.tilTitle.error = getString(R.string.validation_title_required)
-            return
-        }
-        binding.tilTitle.error = null
-
-        if (content.isEmpty()) {
-            binding.tilContent.error = getString(R.string.validation_content_required)
-            return
-        }
-        binding.tilContent.error = null
-
-        if (course.isEmpty()) {
-            binding.tilCourse.error = getString(R.string.validation_course_required)
-            return
-        }
-        binding.tilCourse.error = null
 
         // Get difficulty
         val difficulty = when (binding.rgDifficulty.checkedRadioButtonId) {

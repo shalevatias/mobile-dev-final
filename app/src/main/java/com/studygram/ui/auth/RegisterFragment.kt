@@ -11,6 +11,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.studygram.R
 import com.studygram.databinding.FragmentRegisterBinding
+import com.studygram.utils.FormValidator
+import com.studygram.utils.hideKeyboard
 import kotlinx.coroutines.launch
 
 class RegisterFragment : Fragment() {
@@ -21,6 +23,8 @@ class RegisterFragment : Fragment() {
     private val viewModel: AuthViewModel by viewModels {
         AuthViewModelFactory(requireContext())
     }
+
+    private val formValidator = FormValidator()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -35,16 +39,20 @@ class RegisterFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         setupClickListeners()
+        setupRealTimeValidation()
         observeAuthState()
     }
 
     private fun setupClickListeners() {
         binding.btnRegister.setOnClickListener {
-            val username = binding.etUsername.text.toString().trim()
-            val email = binding.etEmail.text.toString().trim()
-            val password = binding.etPassword.text.toString().trim()
+            // Clear previous errors
+            formValidator.clearErrors(binding.tilUsername, binding.tilEmail, binding.tilPassword)
+            hideKeyboard()
 
-            if (validateInput(username, email, password)) {
+            if (validateInput()) {
+                val username = binding.etUsername.text.toString().trim()
+                val email = binding.etEmail.text.toString().trim()
+                val password = binding.etPassword.text.toString().trim()
                 viewModel.signUp(email, password, username)
             }
         }
@@ -54,30 +62,39 @@ class RegisterFragment : Fragment() {
         }
     }
 
-    private fun validateInput(username: String, email: String, password: String): Boolean {
-        if (username.isEmpty()) {
-            binding.tilUsername.error = getString(R.string.validation_username_required)
-            return false
+    /**
+     * Setup real-time validation to clear errors as user types
+     */
+    private fun setupRealTimeValidation() {
+        binding.etUsername.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus && binding.etUsername.text.toString().isNotEmpty()) {
+                formValidator.validateUsername(binding.tilUsername)
+            }
         }
-        binding.tilUsername.error = null
 
-        if (email.isEmpty()) {
-            binding.tilEmail.error = getString(R.string.validation_email_required)
-            return false
+        binding.etEmail.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus && binding.etEmail.text.toString().isNotEmpty()) {
+                formValidator.validateEmail(binding.tilEmail)
+            }
         }
-        binding.tilEmail.error = null
 
-        if (password.isEmpty()) {
-            binding.tilPassword.error = getString(R.string.validation_password_required)
-            return false
+        binding.etPassword.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus && binding.etPassword.text.toString().isNotEmpty()) {
+                formValidator.validatePassword(binding.tilPassword)
+            }
         }
-        if (password.length < 6) {
-            binding.tilPassword.error = getString(R.string.error_invalid_password)
-            return false
-        }
-        binding.tilPassword.error = null
+    }
 
-        return true
+    /**
+     * Validate all input fields using FormValidator
+     * @return True if all fields are valid, false otherwise
+     */
+    private fun validateInput(): Boolean {
+        val isUsernameValid = formValidator.validateUsername(binding.tilUsername)
+        val isEmailValid = formValidator.validateEmail(binding.tilEmail)
+        val isPasswordValid = formValidator.validatePassword(binding.tilPassword)
+
+        return isUsernameValid && isEmailValid && isPasswordValid
     }
 
     private fun observeAuthState() {
@@ -88,21 +105,36 @@ class RegisterFragment : Fragment() {
                         binding.progressBar.visibility = View.VISIBLE
                         binding.btnRegister.isEnabled = false
                         binding.tvError.visibility = View.GONE
+                        // Disable input fields during loading
+                        binding.tilUsername.isEnabled = false
+                        binding.tilEmail.isEnabled = false
+                        binding.tilPassword.isEnabled = false
                     }
                     state.error != null -> {
                         binding.progressBar.visibility = View.GONE
                         binding.btnRegister.isEnabled = true
                         binding.tvError.visibility = View.VISIBLE
                         binding.tvError.text = state.error
+                        // Re-enable input fields
+                        binding.tilUsername.isEnabled = true
+                        binding.tilEmail.isEnabled = true
+                        binding.tilPassword.isEnabled = true
+
+                        // Clear error after showing it
+                        viewModel.clearError()
                     }
                     state.user != null -> {
                         binding.progressBar.visibility = View.GONE
-                        Toast.makeText(requireContext(), "Registration successful!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "Welcome to StudyGram!", Toast.LENGTH_SHORT).show()
                         findNavController().navigate(R.id.action_registerFragment_to_feedFragment)
                     }
                     else -> {
                         binding.progressBar.visibility = View.GONE
                         binding.btnRegister.isEnabled = true
+                        // Re-enable input fields
+                        binding.tilUsername.isEnabled = true
+                        binding.tilEmail.isEnabled = true
+                        binding.tilPassword.isEnabled = true
                     }
                 }
             }

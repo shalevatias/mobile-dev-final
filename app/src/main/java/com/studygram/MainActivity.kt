@@ -50,15 +50,15 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
                 R.id.navigation_my_content -> {
-                    // TODO: Navigate to My Content when fragment is created
+                    // Feature not implemented in current version
                     true
                 }
                 R.id.navigation_create -> {
-                    // TODO: Navigate to Create Post when fragment is created
+                    navController.navigate(R.id.createPostFragment)
                     true
                 }
                 R.id.navigation_profile -> {
-                    // TODO: Navigate to Profile when fragment is created
+                    // Feature not implemented in current version
                     true
                 }
                 else -> false

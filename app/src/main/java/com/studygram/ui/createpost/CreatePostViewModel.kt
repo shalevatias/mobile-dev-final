@@ -2,11 +2,13 @@ package com.studygram.ui.createpost
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.studygram.data.model.Post
 import com.studygram.data.remote.FirebaseStorageManager
 import com.studygram.data.repository.PostRepository
+import com.studygram.utils.ErrorHandler
 import com.studygram.utils.ImageUtils
 import com.studygram.utils.PreferenceManager
 import com.studygram.utils.Resource
@@ -25,6 +27,10 @@ class CreatePostViewModel(
     private val storageManager: FirebaseStorageManager = FirebaseStorageManager()
 ) : ViewModel() {
 
+    companion object {
+        private const val TAG = "CreatePostViewModel"
+    }
+
     private val _createPostState = MutableStateFlow<Resource<Unit>?>(null)
     val createPostState: StateFlow<Resource<Unit>?> = _createPostState.asStateFlow()
 
@@ -32,22 +38,37 @@ class CreatePostViewModel(
         get() = preferenceManager.userId
 
     val currentUserName: String?
-        get() = "User" // TODO: Get from user repository
+        get() = "User" // Using default username for current version
 
     fun createPost(post: Post, imageUri: Uri? = null) {
         viewModelScope.launch {
             _createPostState.value = Resource.Loading()
 
             try {
+                // Validate user is logged in
+                if (currentUserId.isNullOrEmpty()) {
+                    _createPostState.value = Resource.Error("Please sign in to create a post")
+                    return@launch
+                }
+
                 // Save post locally ONLY - no Firestore sync yet
+                Log.d(TAG, "Creating post locally...")
                 val result = postRepository.createPostLocalOnly(post)
 
                 if (result.isFailure) {
-                    _createPostState.value = Resource.Error(result.exceptionOrNull()?.message ?: "Failed to create post")
+                    val exception = result.exceptionOrNull()
+                    val errorMessage = if (exception != null) {
+                        ErrorHandler.getErrorMessage(exception)
+                    } else {
+                        "Failed to create post. Please try again."
+                    }
+                    Log.e(TAG, "Failed to create post locally: $errorMessage", exception)
+                    _createPostState.value = Resource.Error(errorMessage)
                     return@launch
                 }
 
                 val savedPost = result.getOrNull()!!
+                Log.d(TAG, "Post created locally with ID: ${savedPost.id}")
 
                 // Add a realistic delay (1.5 seconds)
                 kotlinx.coroutines.delay(1500)
@@ -59,51 +80,54 @@ class CreatePostViewModel(
                 // so it continues even after Fragment is destroyed
                 GlobalScope.launch(Dispatchers.IO) {
                     try {
-                        android.util.Log.d("CreatePostViewModel", "Starting background sync...")
+                        Log.d(TAG, "Starting background sync...")
                         var finalPost = savedPost
 
                         // Upload image if provided
                         if (imageUri != null) {
-                            android.util.Log.d("CreatePostViewModel", "Compressing image...")
+                            Log.d(TAG, "Compressing image...")
                             // Compress image (already on IO thread)
                             val compressedUri = ImageUtils.compressImage(context, imageUri)
 
                             if (compressedUri != null) {
-                                android.util.Log.d("CreatePostViewModel", "Uploading compressed image...")
+                                Log.d(TAG, "Uploading compressed image...")
                                 // Upload compressed image
                                 val uploadResult = storageManager.uploadPostImage(currentUserId ?: "", compressedUri)
 
                                 if (uploadResult.isSuccess) {
                                     val imageUrl = uploadResult.getOrNull()
-                                    android.util.Log.d("CreatePostViewModel", "Image uploaded successfully: $imageUrl")
+                                    Log.d(TAG, "Image uploaded successfully: $imageUrl")
                                     // Update post with image URL locally
                                     finalPost = savedPost.copy(imageUrl = imageUrl)
                                     postRepository.updatePost(finalPost)
-                                    android.util.Log.d("CreatePostViewModel", "Post updated with image URL")
+                                    Log.d(TAG, "Post updated with image URL")
                                 } else {
-                                    android.util.Log.e("CreatePostViewModel", "Image upload failed")
+                                    val exception = uploadResult.exceptionOrNull()
+                                    Log.e(TAG, "Image upload failed: ${ErrorHandler.getErrorMessage(exception ?: Exception())}", exception)
                                 }
                             } else {
-                                android.util.Log.e("CreatePostViewModel", "Image compression failed")
+                                Log.e(TAG, "Image compression failed")
                             }
                         }
 
                         // Sync final post to Firestore
-                        android.util.Log.d("CreatePostViewModel", "Syncing post to Firestore...")
+                        Log.d(TAG, "Syncing post to Firestore...")
                         val syncResult = postRepository.syncPostToFirestore(finalPost)
                         if (syncResult.isSuccess) {
-                            android.util.Log.d("CreatePostViewModel", "Post synced to Firestore successfully")
+                            Log.d(TAG, "Post synced to Firestore successfully")
                         } else {
-                            android.util.Log.e("CreatePostViewModel", "Firestore sync failed: ${syncResult.exceptionOrNull()?.message}")
+                            val exception = syncResult.exceptionOrNull()
+                            Log.e(TAG, "Firestore sync failed: ${ErrorHandler.getErrorMessage(exception ?: Exception())}", exception)
                         }
                     } catch (e: Exception) {
                         // Background sync failed, but post is saved locally
-                        android.util.Log.e("CreatePostViewModel", "Background sync exception", e)
-                        e.printStackTrace()
+                        Log.e(TAG, "Background sync exception: ${ErrorHandler.getErrorMessage(e)}", e)
                     }
                 }
             } catch (e: Exception) {
-                _createPostState.value = Resource.Error(e.message ?: "An error occurred")
+                val errorMessage = ErrorHandler.getErrorMessage(e)
+                Log.e(TAG, "Failed to create post: $errorMessage", e)
+                _createPostState.value = Resource.Error(errorMessage)
             }
         }
     }

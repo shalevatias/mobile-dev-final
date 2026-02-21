@@ -22,7 +22,6 @@ import com.studygram.utils.visible
 class FeedFragment : BaseFragment<FragmentFeedBinding>() {
 
     private val viewModel: FeedViewModel by lazy {
-        android.util.Log.d("FeedFragment", "Creating FeedViewModel...")
         val context = requireContext()
         val database = AppDatabase.getDatabase(context)
         val firestoreManager = FirestoreManager()
@@ -42,9 +41,7 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>() {
             preferenceManager
         )
         val factory = FeedViewModelFactory(postRepository, authRepository)
-        val vm = ViewModelProvider(this, factory)[FeedViewModel::class.java]
-        android.util.Log.d("FeedFragment", "FeedViewModel created")
-        vm
+        ViewModelProvider(this, factory)[FeedViewModel::class.java]
     }
 
     private lateinit var postAdapter: PostAdapter
@@ -53,17 +50,16 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>() {
         FragmentFeedBinding.inflate(inflater, container, false)
 
     override fun setupUI() {
-        android.util.Log.d("FeedFragment", "setupUI called")
         postAdapter = PostAdapter(
             onPostClick = { post ->
-                // TODO: Navigate to post detail when implemented
+                // Post detail feature not implemented in current version
                 showToast("Post: ${post.title}")
             },
             onLikeClick = { post ->
                 viewModel.likePost(post.id)
             },
             onCommentClick = { post ->
-                // TODO: Navigate to comments when implemented
+                // Comments feature not implemented in current version
                 showToast("Comments: ${post.commentsCount}")
             }
         )
@@ -81,26 +77,15 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>() {
         binding.toolbar.setOnMenuItemClickListener { menuItem ->
             handleMenuClick(menuItem)
         }
-
-        binding.btnRefreshQuote.setOnClickListener {
-            viewModel.loadQuote()
-        }
     }
 
     override fun observeData() {
-        android.util.Log.d("FeedFragment", "observeData called")
         viewModel.posts.observe(viewLifecycleOwner) { posts ->
-            android.util.Log.d("FeedFragment", "Posts received: ${posts.size} posts")
-            posts.forEach { post ->
-                android.util.Log.d("FeedFragment", "Post: ${post.title} - ${post.id}")
-            }
             postAdapter.submitList(posts)
             if (posts.isEmpty()) {
-                android.util.Log.d("FeedFragment", "No posts - showing empty state")
                 binding.tvEmptyState.visible()
                 binding.recyclerViewPosts.gone()
             } else {
-                android.util.Log.d("FeedFragment", "Showing ${posts.size} posts")
                 binding.tvEmptyState.gone()
                 binding.recyclerViewPosts.visible()
             }
@@ -122,42 +107,8 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>() {
                 }
                 is Resource.Error -> {
                     binding.swipeRefresh.isRefreshing = false
-                    // Use enhanced error display with retry option
-                    showSnackbarWithAction(
-                        message = resource.message ?: "Sync failed",
-                        actionText = getString(R.string.retry),
-                        action = {
-                            viewModel.refreshPosts()
-                        }
-                    )
-                }
-            }
-        }
-
-        viewModel.quote.observe(viewLifecycleOwner) { resource ->
-            when (resource) {
-                is Resource.Loading -> {
-                    binding.progressQuote.visible()
-                    binding.tvQuoteContent.gone()
-                    binding.tvQuoteAuthor.gone()
-                    binding.tvQuoteError.gone()
-                }
-                is Resource.Success -> {
-                    binding.progressQuote.gone()
-                    binding.tvQuoteError.gone()
-                    resource.data?.let { quote ->
-                        binding.tvQuoteContent.visible()
-                        binding.tvQuoteAuthor.visible()
-                        binding.tvQuoteContent.text = "\"${quote.content}\""
-                        binding.tvQuoteAuthor.text = "— ${quote.author}"
-                    }
-                }
-                is Resource.Error -> {
-                    binding.progressQuote.gone()
-                    binding.tvQuoteContent.gone()
-                    binding.tvQuoteAuthor.gone()
-                    binding.tvQuoteError.visible()
-                    binding.tvQuoteError.text = resource.message ?: "Failed to load quote"
+                    // Silently fail - user can still see cached posts
+                    // No error message shown to avoid annoying the user
                 }
             }
         }
@@ -180,7 +131,12 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>() {
         // Observe general errors
         viewModel.error.observe(viewLifecycleOwner) { errorMessage ->
             errorMessage?.let {
-                showError(it)
+                // Only show non-network errors
+                if (!it.contains("internet", ignoreCase = true) &&
+                    !it.contains("network", ignoreCase = true) &&
+                    !it.contains("connection", ignoreCase = true)) {
+                    showError(it)
+                }
                 viewModel.clearError()
             }
         }
