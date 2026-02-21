@@ -62,9 +62,6 @@ class RegisterFragment : Fragment() {
         }
     }
 
-    /**
-     * Setup real-time validation to clear errors as user types
-     */
     private fun setupRealTimeValidation() {
         binding.etUsername.setOnFocusChangeListener { _, hasFocus ->
             if (!hasFocus && binding.etUsername.text.toString().isNotEmpty()) {
@@ -105,7 +102,6 @@ class RegisterFragment : Fragment() {
                         binding.progressBar.visibility = View.VISIBLE
                         binding.btnRegister.isEnabled = false
                         binding.tvError.visibility = View.GONE
-                        // Disable input fields during loading
                         binding.tilUsername.isEnabled = false
                         binding.tilEmail.isEnabled = false
                         binding.tilPassword.isEnabled = false
@@ -115,12 +111,10 @@ class RegisterFragment : Fragment() {
                         binding.btnRegister.isEnabled = true
                         binding.tvError.visibility = View.VISIBLE
                         binding.tvError.text = state.error
-                        // Re-enable input fields
                         binding.tilUsername.isEnabled = true
                         binding.tilEmail.isEnabled = true
                         binding.tilPassword.isEnabled = true
 
-                        // Clear error after showing it
                         viewModel.clearError()
                     }
                     state.user != null -> {
@@ -131,7 +125,6 @@ class RegisterFragment : Fragment() {
                     else -> {
                         binding.progressBar.visibility = View.GONE
                         binding.btnRegister.isEnabled = true
-                        // Re-enable input fields
                         binding.tilUsername.isEnabled = true
                         binding.tilEmail.isEnabled = true
                         binding.tilPassword.isEnabled = true

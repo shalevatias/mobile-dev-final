@@ -46,10 +46,6 @@ abstract class BaseFragment<VB : ViewBinding> : Fragment() {
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
 
-    protected fun showLongToast(message: String) {
-        Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
-    }
-
     // Snackbar messages
     protected fun showSnackbar(message: String, duration: Int = Snackbar.LENGTH_SHORT) {
         Snackbar.make(binding.root, message, duration).show()
@@ -130,30 +126,9 @@ abstract class BaseFragment<VB : ViewBinding> : Fragment() {
             .show()
     }
 
-    // Error dialog
-    protected fun showErrorDialog(
-        title: String = "Error",
-        message: String,
-        onDismiss: (() -> Unit)? = null
-    ) {
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(title)
-            .setMessage(message)
-            .setPositiveButton(getString(R.string.ok)) { dialog, _ ->
-                dialog.dismiss()
-                onDismiss?.invoke()
-            }
-            .show()
-    }
-
     // Success message
     protected fun showSuccess(message: String) {
         showSnackbar(message, Snackbar.LENGTH_SHORT)
-    }
-
-    // Info message
-    protected fun showInfo(message: String) {
-        showSnackbar(message, Snackbar.LENGTH_LONG)
     }
 
     override fun onDestroyView() {

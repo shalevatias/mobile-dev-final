@@ -61,9 +61,6 @@ class LoginFragment : Fragment() {
         }
     }
 
-    /**
-     * Setup real-time validation to clear errors as user types
-     */
     private fun setupRealTimeValidation() {
         binding.etEmail.setOnFocusChangeListener { _, hasFocus ->
             if (!hasFocus && binding.etEmail.text.toString().isNotEmpty()) {
@@ -97,7 +94,6 @@ class LoginFragment : Fragment() {
                         binding.progressBar.visibility = View.VISIBLE
                         binding.btnLogin.isEnabled = false
                         binding.tvError.visibility = View.GONE
-                        // Disable input fields during loading
                         binding.tilEmail.isEnabled = false
                         binding.tilPassword.isEnabled = false
                     }
@@ -106,11 +102,9 @@ class LoginFragment : Fragment() {
                         binding.btnLogin.isEnabled = true
                         binding.tvError.visibility = View.VISIBLE
                         binding.tvError.text = state.error
-                        // Re-enable input fields
                         binding.tilEmail.isEnabled = true
                         binding.tilPassword.isEnabled = true
 
-                        // Clear error after showing it
                         viewModel.clearError()
                     }
                     state.user != null -> {
@@ -121,7 +115,6 @@ class LoginFragment : Fragment() {
                     else -> {
                         binding.progressBar.visibility = View.GONE
                         binding.btnLogin.isEnabled = true
-                        // Re-enable input fields
                         binding.tilEmail.isEnabled = true
                         binding.tilPassword.isEnabled = true
                     }

@@ -144,23 +144,42 @@ class AuthRepository(
                 val updatedUser = user.copy(
                     username = updates["username"] as? String ?: user.username,
                     profileImageUrl = updates["profileImageUrl"] as? String ?: user.profileImageUrl,
+                    yearOfStudy = updates["yearOfStudy"] as? String ?: user.yearOfStudy,
+                    degree = updates["degree"] as? String ?: user.degree,
                     lastUpdated = System.currentTimeMillis()
                 )
                 userDao.update(updatedUser)
-            }
 
-            // Sync with Firestore if online
-            if (isNetworkAvailable()) {
-                val firestoreResult = firestoreManager.updateUser(userId, updates)
-                if (firestoreResult.isFailure) {
-                    return Result.failure(
-                        getNetworkError(firestoreResult.exceptionOrNull() ?: Exception("Update failed"))
-                    )
+                // Sync with Firestore if online
+                if (isNetworkAvailable()) {
+                    // First ensure user document exists in Firestore
+                    val getUserResult = firestoreManager.getUser(userId)
+                    if (getUserResult.isFailure) {
+                        // User doesn't exist in Firestore, create it
+                        android.util.Log.d("AuthRepository", "User doesn't exist in Firestore, creating...")
+                        val saveResult = firestoreManager.saveUser(updatedUser)
+                        if (saveResult.isFailure) {
+                            return Result.failure(
+                                getNetworkError(saveResult.exceptionOrNull() ?: Exception("Failed to create user"))
+                            )
+                        }
+                    } else {
+                        // User exists, update it
+                        val firestoreResult = firestoreManager.updateUser(userId, updates)
+                        if (firestoreResult.isFailure) {
+                            return Result.failure(
+                                getNetworkError(firestoreResult.exceptionOrNull() ?: Exception("Update failed"))
+                            )
+                        }
+                    }
                 }
+            } else {
+                return Result.failure(Exception("User not found in local database"))
             }
 
             Result.success(Unit)
         } catch (e: Exception) {
+            android.util.Log.e("AuthRepository", "Error updating user profile", e)
             Result.failure(getNetworkError(e))
         }
     }

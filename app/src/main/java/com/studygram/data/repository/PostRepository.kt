@@ -250,15 +250,10 @@ class PostRepository(
 
     suspend fun refreshPosts(): Result<Unit> {
         return try {
-            android.util.Log.d("PostRepository", "refreshPosts called")
-
-            // Skip refresh if offline
             if (!isNetworkAvailable()) {
-                android.util.Log.w("PostRepository", "Network not available")
                 return Result.failure(Exception("Cannot refresh while offline. Showing cached content."))
             }
 
-            android.util.Log.d("PostRepository", "Network available, fetching from Firestore...")
             val result = firestoreManager.getAllPosts()
             if (result.isFailure) {
                 android.util.Log.e("PostRepository", "Firestore fetch failed: ${result.exceptionOrNull()?.message}")
@@ -268,12 +263,7 @@ class PostRepository(
             }
 
             val posts = result.getOrNull() ?: emptyList()
-            android.util.Log.d("PostRepository", "Fetched ${posts.size} posts from Firestore")
-
-            android.util.Log.d("PostRepository", "Deleting old posts from local DB...")
             postDao.deleteAll()
-
-            android.util.Log.d("PostRepository", "Inserting ${posts.size} posts to local DB...")
             postDao.insertAll(posts)
 
             if (posts.isNotEmpty()) {
@@ -281,7 +271,6 @@ class PostRepository(
                 preferenceManager.lastSyncTimestamp = maxTimestamp
             }
 
-            android.util.Log.d("PostRepository", "Refresh completed successfully")
             Result.success(Unit)
         } catch (e: Exception) {
             android.util.Log.e("PostRepository", "Refresh failed with exception", e)

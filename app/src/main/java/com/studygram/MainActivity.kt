@@ -31,7 +31,8 @@ class MainActivity : AppCompatActivity() {
             setOf(
                 R.id.loginFragment,
                 R.id.registerFragment,
-                R.id.feedFragment
+                R.id.feedFragment,
+                R.id.profileFragment
             )
         )
         setupActionBarWithNavController(navController, appBarConfiguration)
@@ -58,7 +59,9 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
                 R.id.navigation_profile -> {
-                    // Feature not implemented in current version
+                    if (navController.currentDestination?.id != R.id.profileFragment) {
+                        navController.navigate(R.id.profileFragment)
+                    }
                     true
                 }
                 else -> false
@@ -72,6 +75,11 @@ class MainActivity : AppCompatActivity() {
                     binding.bottomNavigation.visibility = View.VISIBLE
                     supportActionBar?.show()
                     binding.bottomNavigation.selectedItemId = R.id.navigation_feed
+                }
+                R.id.profileFragment -> {
+                    binding.bottomNavigation.visibility = View.VISIBLE
+                    supportActionBar?.show()
+                    binding.bottomNavigation.selectedItemId = R.id.navigation_profile
                 }
                 R.id.loginFragment,
                 R.id.registerFragment -> {

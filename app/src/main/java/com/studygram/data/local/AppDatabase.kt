@@ -11,7 +11,7 @@ import com.studygram.data.model.User
 
 @Database(
     entities = [User::class, Post::class, Comment::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

@@ -143,22 +143,4 @@ object ErrorHandler {
             else -> null
         }
     }
-
-    /**
-     * Format error for logging/debugging
-     * @param exception The exception
-     * @param context Additional context about where the error occurred
-     * @return Formatted error message for logging
-     */
-    fun formatErrorForLogging(exception: Throwable, context: String = ""): String {
-        val errorType = exception.javaClass.simpleName
-        val message = exception.message ?: "No message"
-        val stackTrace = exception.stackTraceToString().take(500) // Limit stack trace
-        return """
-            |ERROR: $errorType
-            |Context: $context
-            |Message: $message
-            |Stack trace: $stackTrace
-        """.trimMargin()
-    }
 }

@@ -148,22 +148,6 @@ object ValidationUtils {
     }
 
     /**
-     * Validate URL format
-     * @param url URL to validate
-     * @return ValidationResult with validity and error message
-     */
-    fun validateUrl(url: String?): ValidationResult {
-        if (url.isNullOrBlank()) {
-            return ValidationResult(false, "URL is required")
-        }
-        return if (Patterns.WEB_URL.matcher(url).matches()) {
-            ValidationResult(true)
-        } else {
-            ValidationResult(false, "Please enter a valid URL")
-        }
-    }
-
-    /**
      * Validate that two strings match (for password confirmation)
      * @param value1 First value
      * @param value2 Second value

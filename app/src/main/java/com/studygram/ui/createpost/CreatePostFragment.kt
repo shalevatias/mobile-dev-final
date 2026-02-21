@@ -68,9 +68,6 @@ class CreatePostFragment : BaseFragment<FragmentCreatePostBinding>() {
         setupRealTimeValidation()
     }
 
-    /**
-     * Setup real-time validation to clear errors as user types
-     */
     private fun setupRealTimeValidation() {
         binding.etTitle.setOnFocusChangeListener { _, hasFocus ->
             if (!hasFocus && binding.etTitle.text.toString().isNotEmpty()) {
@@ -99,7 +96,6 @@ class CreatePostFragment : BaseFragment<FragmentCreatePostBinding>() {
                         binding.progressBar.visibility = View.VISIBLE
                         binding.btnCreatePost.isEnabled = false
                         binding.btnAddImage.isEnabled = false
-                        // Disable input fields during loading
                         binding.tilTitle.isEnabled = false
                         binding.tilContent.isEnabled = false
                         binding.tilCourse.isEnabled = false
@@ -114,7 +110,6 @@ class CreatePostFragment : BaseFragment<FragmentCreatePostBinding>() {
                         binding.progressBar.visibility = View.GONE
                         binding.btnCreatePost.isEnabled = true
                         binding.btnAddImage.isEnabled = true
-                        // Re-enable input fields
                         binding.tilTitle.isEnabled = true
                         binding.tilContent.isEnabled = true
                         binding.tilCourse.isEnabled = true
@@ -125,7 +120,6 @@ class CreatePostFragment : BaseFragment<FragmentCreatePostBinding>() {
                         binding.progressBar.visibility = View.GONE
                         binding.btnCreatePost.isEnabled = true
                         binding.btnAddImage.isEnabled = true
-                        // Re-enable input fields
                         binding.tilTitle.isEnabled = true
                         binding.tilContent.isEnabled = true
                         binding.tilCourse.isEnabled = true

@@ -29,6 +29,7 @@ class FirestoreManager {
                 .await()
             Result.success(Unit)
         } catch (e: Exception) {
+            android.util.Log.e("FirestoreManager", "Error saving user ${user.id}: ${e.message}", e)
             Result.failure(e)
         }
     }
@@ -53,10 +54,12 @@ class FirestoreManager {
 
             firestore.collection(Constants.USERS_COLLECTION)
                 .document(userId)
-                .update(updateMap)
+                .set(updateMap, com.google.firebase.firestore.SetOptions.merge())
                 .await()
+
             Result.success(Unit)
         } catch (e: Exception) {
+            android.util.Log.e("FirestoreManager", "Error updating user $userId: ${e.message}", e)
             Result.failure(e)
         }
     }
@@ -92,40 +95,27 @@ class FirestoreManager {
 
     suspend fun getAllPosts(): Result<List<Post>> {
         return try {
-            android.util.Log.d("FirestoreManager", "Fetching all posts from Firestore...")
-
-            // Try with orderBy first
-            var snapshot = try {
+            val snapshot = try {
                 firestore.collection(Constants.POSTS_COLLECTION)
                     .orderBy(Constants.FIELD_TIMESTAMP, Query.Direction.DESCENDING)
                     .get()
                     .await()
             } catch (e: Exception) {
-                // If orderBy fails (missing index), fetch without ordering
-                android.util.Log.w("FirestoreManager", "OrderBy failed, fetching without ordering: ${e.message}")
                 firestore.collection(Constants.POSTS_COLLECTION)
                     .get()
                     .await()
             }
 
-            android.util.Log.d("FirestoreManager", "Received ${snapshot.documents.size} documents from Firestore")
-
             val posts = snapshot.documents.mapNotNull { doc ->
                 try {
-                    doc.data?.let {
-                        android.util.Log.d("FirestoreManager", "Parsing post: ${doc.id}, data keys: ${it.keys}")
-                        Post.fromFirestore(it)
-                    }
+                    doc.data?.let { Post.fromFirestore(it) }
                 } catch (e: Exception) {
                     android.util.Log.e("FirestoreManager", "Error parsing post ${doc.id}", e)
                     null
                 }
             }
 
-            // Sort locally by timestamp if we got posts
             val sortedPosts = posts.sortedByDescending { it.timestamp }
-
-            android.util.Log.d("FirestoreManager", "Successfully parsed ${sortedPosts.size} posts")
             Result.success(sortedPosts)
         } catch (e: Exception) {
             android.util.Log.e("FirestoreManager", "Error fetching posts", e)
