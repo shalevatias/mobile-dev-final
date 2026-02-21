@@ -96,30 +96,6 @@ class FormValidator {
     }
 
     /**
-     * Validate that two password fields match
-     */
-    fun validatePasswordMatch(
-        passwordLayout: TextInputLayout,
-        confirmPasswordLayout: TextInputLayout
-    ): Boolean {
-        val password = passwordLayout.editText?.text?.toString()
-        val confirmPassword = confirmPasswordLayout.editText?.text?.toString()
-
-        val result = ValidationUtils.validateMatch(password, confirmPassword, "Passwords")
-
-        return if (result.isValid) {
-            confirmPasswordLayout.error = null
-            confirmPasswordLayout.isErrorEnabled = false
-            true
-        } else {
-            confirmPasswordLayout.error = result.errorMessage
-            confirmPasswordLayout.isErrorEnabled = true
-            result.errorMessage?.let { errors.add(it) }
-            false
-        }
-    }
-
-    /**
      * Clear all errors from a TextInputLayout
      */
     fun clearError(textInputLayout: TextInputLayout) {
@@ -156,44 +132,24 @@ class FormValidator {
     fun clearErrorList() {
         errors.clear()
     }
-
-    /**
-     * Validate multiple fields at once
-     * Returns true if all are valid, false if any are invalid
-     */
-    fun validateAll(vararg validations: () -> Boolean): Boolean {
-        clearErrorList()
-        val results = validations.map { it() }
-        return results.all { it }
-    }
-
-    companion object {
-        /**
-         * Quick validation without FormValidator instance
-         */
-        fun quickValidate(
-            textInputLayout: TextInputLayout,
-            validator: (String?) -> ValidationUtils.ValidationResult
-        ): Boolean {
-            return FormValidator().validate(textInputLayout, validator)
-        }
-    }
 }
 
 /**
- * Extension function for TextInputLayout to easily validate
+ * Extension function to validate TextInputLayout with a validator function
  */
-fun TextInputLayout.validateWith(validator: (String?) -> ValidationUtils.ValidationResult): Boolean {
-    val text = this.editText?.text?.toString()
+private fun TextInputLayout.validateWith(
+    validator: (String?) -> ValidationUtils.ValidationResult
+): Boolean {
+    val text = editText?.text?.toString()
     val result = validator(text)
 
     return if (result.isValid) {
-        this.error = null
-        this.isErrorEnabled = false
+        error = null
+        isErrorEnabled = false
         true
     } else {
-        this.error = result.errorMessage
-        this.isErrorEnabled = true
+        error = result.errorMessage
+        isErrorEnabled = true
         false
     }
 }

@@ -26,26 +26,9 @@ fun ImageView.loadImage(url: String?) {
         .into(this)
 }
 
-fun ImageView.loadImage(url: String?, placeholder: Int) {
-    if (url.isNullOrEmpty()) {
-        setImageResource(placeholder)
-        return
-    }
-    Picasso.get()
-        .load(url)
-        .placeholder(placeholder)
-        .error(placeholder)
-        .into(this)
-}
-
 fun String?.isValidEmail(): Boolean {
     if (this == null) return false
     return android.util.Patterns.EMAIL_ADDRESS.matcher(this).matches()
-}
-
-fun String?.isValidPassword(): Boolean {
-    if (this == null) return false
-    return this.length >= 6
 }
 
 /**

@@ -51,16 +51,4 @@ class FirebaseStorageManager {
             Result.failure(e)
         }
     }
-
-    fun getProfileImageReference(userId: String, fileName: String) =
-        storage.reference
-            .child(Constants.STORAGE_PROFILE_IMAGES)
-            .child(userId)
-            .child(fileName)
-
-    fun getPostImageReference(userId: String, fileName: String) =
-        storage.reference
-            .child(Constants.STORAGE_POST_IMAGES)
-            .child(userId)
-            .child(fileName)
 }

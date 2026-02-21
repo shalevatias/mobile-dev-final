@@ -23,14 +23,10 @@ class FirestoreManager {
 
     suspend fun saveUser(user: User): Result<Unit> {
         return try {
-            android.util.Log.d("FirestoreManager", "Saving user: ${user.id}")
-
             firestore.collection(Constants.USERS_COLLECTION)
                 .document(user.id)
                 .set(user.toFirestoreMap())
                 .await()
-
-            android.util.Log.d("FirestoreManager", "User saved successfully")
             Result.success(Unit)
         } catch (e: Exception) {
             android.util.Log.e("FirestoreManager", "Error saving user ${user.id}: ${e.message}", e)
@@ -53,28 +49,17 @@ class FirestoreManager {
 
     suspend fun updateUser(userId: String, updates: Map<String, Any>): Result<Unit> {
         return try {
-            android.util.Log.d("FirestoreManager", "Updating user: $userId with updates: $updates")
-
-            // Check current auth state
-            val currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
-            android.util.Log.d("FirestoreManager", "Current auth user: ${currentUser?.uid}")
-
             val updateMap = updates.toMutableMap()
             updateMap[Constants.FIELD_LAST_UPDATED] = FieldValue.serverTimestamp()
 
-            // Use set with merge option to update fields without requiring all fields to exist
             firestore.collection(Constants.USERS_COLLECTION)
                 .document(userId)
                 .set(updateMap, com.google.firebase.firestore.SetOptions.merge())
                 .await()
 
-            android.util.Log.d("FirestoreManager", "User updated successfully")
             Result.success(Unit)
         } catch (e: Exception) {
             android.util.Log.e("FirestoreManager", "Error updating user $userId: ${e.message}", e)
-            if (e is com.google.firebase.firestore.FirebaseFirestoreException) {
-                android.util.Log.e("FirestoreManager", "Firestore error code: ${e.code}")
-            }
             Result.failure(e)
         }
     }
@@ -110,40 +95,27 @@ class FirestoreManager {
 
     suspend fun getAllPosts(): Result<List<Post>> {
         return try {
-            android.util.Log.d("FirestoreManager", "Fetching all posts from Firestore...")
-
-            // Try with orderBy first
-            var snapshot = try {
+            val snapshot = try {
                 firestore.collection(Constants.POSTS_COLLECTION)
                     .orderBy(Constants.FIELD_TIMESTAMP, Query.Direction.DESCENDING)
                     .get()
                     .await()
             } catch (e: Exception) {
-                // If orderBy fails (missing index), fetch without ordering
-                android.util.Log.w("FirestoreManager", "OrderBy failed, fetching without ordering: ${e.message}")
                 firestore.collection(Constants.POSTS_COLLECTION)
                     .get()
                     .await()
             }
 
-            android.util.Log.d("FirestoreManager", "Received ${snapshot.documents.size} documents from Firestore")
-
             val posts = snapshot.documents.mapNotNull { doc ->
                 try {
-                    doc.data?.let {
-                        android.util.Log.d("FirestoreManager", "Parsing post: ${doc.id}, data keys: ${it.keys}")
-                        Post.fromFirestore(it)
-                    }
+                    doc.data?.let { Post.fromFirestore(it) }
                 } catch (e: Exception) {
                     android.util.Log.e("FirestoreManager", "Error parsing post ${doc.id}", e)
                     null
                 }
             }
 
-            // Sort locally by timestamp if we got posts
             val sortedPosts = posts.sortedByDescending { it.timestamp }
-
-            android.util.Log.d("FirestoreManager", "Successfully parsed ${sortedPosts.size} posts")
             Result.success(sortedPosts)
         } catch (e: Exception) {
             android.util.Log.e("FirestoreManager", "Error fetching posts", e)

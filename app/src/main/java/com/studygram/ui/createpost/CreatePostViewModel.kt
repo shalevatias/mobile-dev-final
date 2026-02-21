@@ -45,14 +45,11 @@ class CreatePostViewModel(
             _createPostState.value = Resource.Loading()
 
             try {
-                // Validate user is logged in
                 if (currentUserId.isNullOrEmpty()) {
                     _createPostState.value = Resource.Error("Please sign in to create a post")
                     return@launch
                 }
 
-                // Save post locally ONLY - no Firestore sync yet
-                Log.d(TAG, "Creating post locally...")
                 val result = postRepository.createPostLocalOnly(post)
 
                 if (result.isFailure) {
@@ -68,60 +65,39 @@ class CreatePostViewModel(
                 }
 
                 val savedPost = result.getOrNull()!!
-                Log.d(TAG, "Post created locally with ID: ${savedPost.id}")
-
-                // Add a realistic delay (1.5 seconds)
                 kotlinx.coroutines.delay(1500)
-
-                // Return success so UI can navigate back
                 _createPostState.value = Resource.Success(Unit)
 
-                // Sync to Firestore and upload image in background using GlobalScope
-                // so it continues even after Fragment is destroyed
                 GlobalScope.launch(Dispatchers.IO) {
                     try {
-                        Log.d(TAG, "Starting background sync...")
                         var finalPost = savedPost
 
-                        // Upload image if provided
                         if (imageUri != null) {
-                            Log.d(TAG, "Compressing image...")
-                            // Compress image (already on IO thread)
                             val compressedUri = ImageUtils.compressImage(context, imageUri)
 
                             if (compressedUri != null) {
-                                Log.d(TAG, "Uploading compressed image...")
-                                // Upload compressed image
                                 val uploadResult = storageManager.uploadPostImage(currentUserId ?: "", compressedUri)
 
                                 if (uploadResult.isSuccess) {
                                     val imageUrl = uploadResult.getOrNull()
-                                    Log.d(TAG, "Image uploaded successfully: $imageUrl")
-                                    // Update post with image URL locally
                                     finalPost = savedPost.copy(imageUrl = imageUrl)
                                     postRepository.updatePost(finalPost)
-                                    Log.d(TAG, "Post updated with image URL")
                                 } else {
                                     val exception = uploadResult.exceptionOrNull()
-                                    Log.e(TAG, "Image upload failed: ${ErrorHandler.getErrorMessage(exception ?: Exception())}", exception)
+                                    Log.e(TAG, "Image upload failed", exception)
                                 }
                             } else {
                                 Log.e(TAG, "Image compression failed")
                             }
                         }
 
-                        // Sync final post to Firestore
-                        Log.d(TAG, "Syncing post to Firestore...")
                         val syncResult = postRepository.syncPostToFirestore(finalPost)
-                        if (syncResult.isSuccess) {
-                            Log.d(TAG, "Post synced to Firestore successfully")
-                        } else {
+                        if (syncResult.isFailure) {
                             val exception = syncResult.exceptionOrNull()
-                            Log.e(TAG, "Firestore sync failed: ${ErrorHandler.getErrorMessage(exception ?: Exception())}", exception)
+                            Log.e(TAG, "Firestore sync failed", exception)
                         }
                     } catch (e: Exception) {
-                        // Background sync failed, but post is saved locally
-                        Log.e(TAG, "Background sync exception: ${ErrorHandler.getErrorMessage(e)}", e)
+                        Log.e(TAG, "Background sync exception", e)
                     }
                 }
             } catch (e: Exception) {

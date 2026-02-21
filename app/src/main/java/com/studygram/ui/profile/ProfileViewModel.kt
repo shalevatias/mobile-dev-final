@@ -41,7 +41,6 @@ class ProfileViewModel(
             _updateState.value = Resource.Loading()
             try {
                 val userId = authRepository.currentUserId
-                android.util.Log.d("ProfileViewModel", "Current userId: $userId")
 
                 if (userId == null) {
                     _updateState.value = Resource.Error("User not logged in")
@@ -54,13 +53,10 @@ class ProfileViewModel(
                     "degree" to degree
                 )
 
-                android.util.Log.d("ProfileViewModel", "Updating profile with: $updates")
-
                 val result = authRepository.updateUserProfile(userId, updates)
                 if (result.isSuccess) {
-                    android.util.Log.d("ProfileViewModel", "Profile updated successfully")
                     _updateState.value = Resource.Success(Unit)
-                    loadUser() // Reload user data
+                    loadUser()
                 } else {
                     val exception = result.exceptionOrNull()
                     android.util.Log.e("ProfileViewModel", "Update failed", exception)
