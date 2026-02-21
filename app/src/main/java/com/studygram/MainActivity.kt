@@ -3,24 +3,20 @@ package com.studygram
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-<<<<<<< Updated upstream
-
-class MainActivity : AppCompatActivity() {
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-=======
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
+import com.google.android.material.snackbar.Snackbar
 import com.studygram.databinding.ActivityMainBinding
+import com.studygram.utils.NetworkManager
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
+    private lateinit var networkManager: NetworkManager
+    private var offlineSnackbar: Snackbar? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,12 +30,14 @@ class MainActivity : AppCompatActivity() {
         val appBarConfiguration = AppBarConfiguration(
             setOf(
                 R.id.loginFragment,
+                R.id.registerFragment,
                 R.id.feedFragment
             )
         )
         setupActionBarWithNavController(navController, appBarConfiguration)
 
         setupBottomNavigation()
+        setupNetworkMonitoring()
     }
 
     private fun setupBottomNavigation() {
@@ -52,49 +50,68 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
                 R.id.navigation_my_content -> {
-                    if (navController.currentDestination?.id != R.id.myContentFragment) {
-                        navController.navigate(R.id.myContentFragment)
-                    }
+                    // TODO: Navigate to My Content when fragment is created
                     true
                 }
                 R.id.navigation_create -> {
-                    navController.navigate(R.id.createPostFragment)
+                    // TODO: Navigate to Create Post when fragment is created
                     true
                 }
                 R.id.navigation_profile -> {
-                    if (navController.currentDestination?.id != R.id.profileFragment) {
-                        navController.navigate(R.id.profileFragment)
-                    }
+                    // TODO: Navigate to Profile when fragment is created
                     true
                 }
                 else -> false
             }
         }
 
-        // Show/hide bottom navigation based on destination
+        // Show/hide bottom navigation and action bar based on destination
         navController.addOnDestinationChangedListener { _, destination, _ ->
             when (destination.id) {
-                R.id.feedFragment,
-                R.id.myContentFragment,
-                R.id.profileFragment -> {
+                R.id.feedFragment -> {
                     binding.bottomNavigation.visibility = View.VISIBLE
+                    supportActionBar?.show()
+                    binding.bottomNavigation.selectedItemId = R.id.navigation_feed
+                }
+                R.id.loginFragment,
+                R.id.registerFragment -> {
+                    binding.bottomNavigation.visibility = View.GONE
+                    supportActionBar?.hide()
                 }
                 else -> {
                     binding.bottomNavigation.visibility = View.GONE
+                    supportActionBar?.show()
                 }
             }
+        }
+    }
 
-            // Update selected item in bottom navigation
-            when (destination.id) {
-                R.id.feedFragment -> binding.bottomNavigation.selectedItemId = R.id.navigation_feed
-                R.id.myContentFragment -> binding.bottomNavigation.selectedItemId = R.id.navigation_my_content
-                R.id.profileFragment -> binding.bottomNavigation.selectedItemId = R.id.navigation_profile
+    private fun setupNetworkMonitoring() {
+        networkManager = NetworkManager(this)
+        networkManager.observe(this) { isConnected ->
+            if (isConnected) {
+                // Network is available
+                offlineSnackbar?.dismiss()
+                offlineSnackbar = null
+            } else {
+                // Network is unavailable
+                showOfflineIndicator()
             }
+        }
+    }
+
+    private fun showOfflineIndicator() {
+        offlineSnackbar = Snackbar.make(
+            binding.root,
+            "No internet connection. Viewing cached content.",
+            Snackbar.LENGTH_INDEFINITE
+        ).apply {
+            setAction("OK") { dismiss() }
+            show()
         }
     }
 
     override fun onSupportNavigateUp(): Boolean {
         return navController.navigateUp() || super.onSupportNavigateUp()
->>>>>>> Stashed changes
     }
 }

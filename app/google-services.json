@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "205366334235",
+    "project_id": "web-dev-final-173f8",
+    "storage_bucket": "web-dev-final-173f8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:205366334235:android:7e0cc75c5afd0b1a1079be",
+        "android_client_info": {
+          "package_name": "com.studygram"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDv9Cp1UjnwlEtKhGG0ek6rT0PsUnRpMJg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

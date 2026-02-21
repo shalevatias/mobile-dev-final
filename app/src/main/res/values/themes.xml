@@ -107,4 +107,10 @@
         <item name="titleTextColor">@color/white</item>
         <item name="elevation">@dimen/elevation_appbar</item>
     </style>
+
+    <!-- Circle Image View Style -->
+    <style name="CircleImageView">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
 </resources>
