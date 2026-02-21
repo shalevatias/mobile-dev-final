@@ -12,7 +12,6 @@ import androidx.navigation.fragment.findNavController
 import com.studygram.R
 import com.studygram.databinding.FragmentLoginBinding
 import com.studygram.utils.FormValidator
-import com.studygram.utils.ValidationUtils
 import com.studygram.utils.hideKeyboard
 import kotlinx.coroutines.launch
 

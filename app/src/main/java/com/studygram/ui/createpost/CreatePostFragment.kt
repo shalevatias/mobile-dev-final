@@ -91,15 +91,6 @@ class CreatePostFragment : BaseFragment<FragmentCreatePostBinding>() {
         }
     }
 
-    /**
-     * Remove the selected image
-     */
-    private fun removeSelectedImage() {
-        selectedImageUri = null
-        binding.ivPreview.setImageURI(null)
-        binding.ivPreview.visibility = View.GONE
-    }
-
     override fun observeData() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.createPostState.collect { resource ->
