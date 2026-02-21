@@ -14,6 +14,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class PostAdapter(
+    private val currentUserId: String?,
     private val onPostClick: (Post) -> Unit,
     private val onLikeClick: (Post) -> Unit,
     private val onCommentClick: (Post) -> Unit
@@ -49,6 +50,18 @@ class PostAdapter(
                 // Engagement
                 tvLikes.text = post.likes.toString()
                 tvComments.text = post.commentsCount.toString()
+
+                // Like button state
+                val isLiked = currentUserId?.let { post.isLikedByUser(it) } ?: false
+                if (isLiked) {
+                    btnLike.setIconResource(R.drawable.ic_favorite_filled)
+                    btnLike.setIconTintResource(R.color.error)
+                    btnLike.setTextColor(root.context.getColor(R.color.error))
+                } else {
+                    btnLike.setIconResource(R.drawable.ic_favorite_border)
+                    btnLike.setIconTintResource(R.color.text_secondary)
+                    btnLike.setTextColor(root.context.getColor(R.color.text_secondary))
+                }
 
                 // Post image
                 if (post.imageUrl != null) {

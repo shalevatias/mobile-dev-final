@@ -23,12 +23,17 @@ class FirestoreManager {
 
     suspend fun saveUser(user: User): Result<Unit> {
         return try {
+            android.util.Log.d("FirestoreManager", "Saving user: ${user.id}")
+
             firestore.collection(Constants.USERS_COLLECTION)
                 .document(user.id)
                 .set(user.toFirestoreMap())
                 .await()
+
+            android.util.Log.d("FirestoreManager", "User saved successfully")
             Result.success(Unit)
         } catch (e: Exception) {
+            android.util.Log.e("FirestoreManager", "Error saving user ${user.id}: ${e.message}", e)
             Result.failure(e)
         }
     }
@@ -48,15 +53,28 @@ class FirestoreManager {
 
     suspend fun updateUser(userId: String, updates: Map<String, Any>): Result<Unit> {
         return try {
+            android.util.Log.d("FirestoreManager", "Updating user: $userId with updates: $updates")
+
+            // Check current auth state
+            val currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+            android.util.Log.d("FirestoreManager", "Current auth user: ${currentUser?.uid}")
+
             val updateMap = updates.toMutableMap()
             updateMap[Constants.FIELD_LAST_UPDATED] = FieldValue.serverTimestamp()
 
+            // Use set with merge option to update fields without requiring all fields to exist
             firestore.collection(Constants.USERS_COLLECTION)
                 .document(userId)
-                .update(updateMap)
+                .set(updateMap, com.google.firebase.firestore.SetOptions.merge())
                 .await()
+
+            android.util.Log.d("FirestoreManager", "User updated successfully")
             Result.success(Unit)
         } catch (e: Exception) {
+            android.util.Log.e("FirestoreManager", "Error updating user $userId: ${e.message}", e)
+            if (e is com.google.firebase.firestore.FirebaseFirestoreException) {
+                android.util.Log.e("FirestoreManager", "Firestore error code: ${e.code}")
+            }
             Result.failure(e)
         }
     }

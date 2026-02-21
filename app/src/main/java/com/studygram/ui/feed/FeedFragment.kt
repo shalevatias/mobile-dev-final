@@ -18,6 +18,7 @@ import com.studygram.utils.PreferenceManager
 import com.studygram.utils.Resource
 import com.studygram.utils.gone
 import com.studygram.utils.visible
+import com.studygram.ui.comments.CommentsDialogFragment
 
 class FeedFragment : BaseFragment<FragmentFeedBinding>() {
 
@@ -51,6 +52,7 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>() {
 
     override fun setupUI() {
         postAdapter = PostAdapter(
+            currentUserId = viewModel.currentUserId,
             onPostClick = { post ->
                 // Post detail feature not implemented in current version
                 showToast("Post: ${post.title}")
@@ -59,8 +61,7 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>() {
                 viewModel.likePost(post.id)
             },
             onCommentClick = { post ->
-                // Comments feature not implemented in current version
-                showToast("Comments: ${post.commentsCount}")
+                openCommentsDialog(post.id)
             }
         )
 
@@ -188,5 +189,10 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>() {
             }
             else -> false
         }
+    }
+
+    private fun openCommentsDialog(postId: String) {
+        val dialog = CommentsDialogFragment.newInstance(postId)
+        dialog.show(childFragmentManager, "CommentsDialog")
     }
 }

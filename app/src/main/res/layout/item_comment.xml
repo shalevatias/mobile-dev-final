@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="@dimen/padding_medium">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivCommentAuthorImage"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:scaleType="centerCrop"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:shapeAppearanceOverlay="@style/CircleImageView"
+        tools:src="@drawable/ic_profile_placeholder" />
+
+    <TextView
+        android:id="@+id/tvCommentAuthorName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_small"
+        android:textColor="@color/text_primary"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toStartOf="@id/btnDeleteComment"
+        app:layout_constraintStart_toEndOf="@id/ivCommentAuthorImage"
+        app:layout_constraintTop_toTopOf="@id/ivCommentAuthorImage"
+        tools:text="John Doe" />
+
+    <TextView
+        android:id="@+id/tvCommentTimestamp"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_small"
+        android:textColor="@color/text_tertiary"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toStartOf="@id/btnDeleteComment"
+        app:layout_constraintStart_toEndOf="@id/ivCommentAuthorImage"
+        app:layout_constraintTop_toBottomOf="@id/tvCommentAuthorName"
+        tools:text="2h ago" />
+
+    <TextView
+        android:id="@+id/tvCommentContent"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_small"
+        android:layout_marginTop="@dimen/spacing_small"
+        android:textColor="@color/text_secondary"
+        android:textSize="14sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/ivCommentAuthorImage"
+        app:layout_constraintTop_toBottomOf="@id/tvCommentTimestamp"
+        tools:text="Great explanation! This really helped me understand the concept." />
+
+    <ImageButton
+        android:id="@+id/btnDeleteComment"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/delete_comment"
+        android:src="@drawable/ic_delete"
+        android:tint="@color/text_tertiary"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:visibility="visible" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

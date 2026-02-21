@@ -11,6 +11,8 @@ data class User(
     val email: String = "",
     val username: String = "",
     val profileImageUrl: String? = null,
+    val yearOfStudy: String = "",
+    val degree: String = "",
     val createdAt: Long = System.currentTimeMillis(),
     val lastUpdated: Long = System.currentTimeMillis()
 ) {
@@ -20,6 +22,8 @@ data class User(
             "email" to email,
             "username" to username,
             "profileImageUrl" to profileImageUrl,
+            "yearOfStudy" to yearOfStudy,
+            "degree" to degree,
             "createdAt" to Timestamp(java.util.Date(createdAt)),
             "lastUpdated" to com.google.firebase.firestore.FieldValue.serverTimestamp()
         )
@@ -32,6 +36,8 @@ data class User(
                 email = data["email"] as? String ?: "",
                 username = data["username"] as? String ?: "",
                 profileImageUrl = data["profileImageUrl"] as? String,
+                yearOfStudy = data["yearOfStudy"] as? String ?: "",
+                degree = data["degree"] as? String ?: "",
                 createdAt = (data["createdAt"] as? Timestamp)?.toDate()?.time ?: System.currentTimeMillis(),
                 lastUpdated = (data["lastUpdated"] as? Timestamp)?.toDate()?.time ?: System.currentTimeMillis()
             )

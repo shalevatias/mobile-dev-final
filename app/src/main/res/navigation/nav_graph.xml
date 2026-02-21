@@ -43,4 +43,15 @@
         android:name="com.studygram.ui.createpost.CreatePostFragment"
         android:label="Create Post" />
 
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.studygram.ui.profile.ProfileFragment"
+        android:label="Profile">
+        <action
+            android:id="@+id/action_profileFragment_to_loginFragment"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
 </navigation>
